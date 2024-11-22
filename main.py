@@ -1,6 +1,7 @@
 import os
 import pprint
 import sys
+import time
 
 import pygame
 
@@ -14,7 +15,7 @@ screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 width, height = screen.get_width(), screen.get_height()
 clock = pygame.time.Clock()
 
-FPS = 50
+FPS = 60
 
 
 def load_image(name, colorkey=None):
@@ -66,12 +67,10 @@ tile_images = {
     'light_grass': load_image('craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_23.png'),
     'grass_bottom_left': load_image('craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_28.png'),
     'grass_bottom': load_image('craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_29.png'),
-    'grass_bottom_right': load_image(
-        'craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_30.png'),
+    'grass_bottom_right': load_image('craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_30.png'),
     'gray_bottom': load_image('craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_32.png'),
     'gray_bottom_right': load_image('craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_33.png'),
-    'light_grass_bottom': load_image(
-        'craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_35.png'),
+    'light_grass_bottom': load_image('craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_35.png'),
     'road_top_to_right': load_image('craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_92.png'),
     'road_top_to_left': load_image('craftpix-net-280167-free-level-map-pixel-art-assets-pack/1 Tiles/Map_tile_93.png'),
     'road_bottom_to_right':
@@ -171,7 +170,7 @@ for item, key in enumerate(explosion_images):
     explosion_images[key] = pygame.transform.scale(explosion_images[key], (128, 128))
 
 shoot_sound = pygame.mixer.Sound('data/wot_mid.mp3')
-shoot_sound.set_volume(0.5)
+shoot_sound.set_volume(0.125)
 
 tank_model = pygame.transform.scale(load_image('tank_model.png'), (100, 100))
 
@@ -215,10 +214,10 @@ def clear_sprites():
 
 def start_screen():
     intro_text = ["ТАНКИ", "",
-                  "Правила игры:",
                   "Перемещение: W A S D",
                   "Стрельба: кнопка мыши",
                   "Поворот: движение мышкой",
+                  "Выход из игры: Esc",
                   "Задача игры: победить всех врагов. Всего 3 уровня"]
 
     fon = pygame.transform.scale(load_image('start_screen.jpeg'), (width, height))
@@ -245,17 +244,26 @@ def start_screen():
         clock.tick(FPS)
 
 
-def win_screen():
+def win_screen(results):
     count = 0
-    time_to_wait = 150
+    time_to_wait = FPS * 3
     text = [("ПОБЕДА", pygame.Color('darkgreen'), pygame.font.Font(None, 50)),
             ("", pygame.Color('black'), pygame.font.Font(None, 30)),
-            ("Нажмите любую клавишу для перехода к следующему уровню", pygame.Color('black'),
-             pygame.font.Font(None, 30))]
+            ("Нажмите любую клавишу для перехода к следующему уровню", pygame.Color('black'), pygame.font.Font(None, 30))]
     fon = pygame.transform.scale(load_image('win_screen.jpeg'), (width, height))
     screen.blit(fon, (0, 0))
     text_coord = 50
     for line, color, font in text:
+        string_rendered = font.render(line, True, color)
+        intro_rect = string_rendered.get_rect()
+        intro_rect.centerx = width // 2
+        intro_rect.y = text_coord
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    font = pygame.font.Font(None, 30)
+    color = pygame.Color('black')
+    for name, number in results.items():
+        line = f'{name}: {number}'
         string_rendered = font.render(line, True, color)
         intro_rect = string_rendered.get_rect()
         intro_rect.centerx = width // 2
@@ -275,9 +283,9 @@ def win_screen():
         clock.tick(FPS)
 
 
-def defeat_screen():
+def defeat_screen(results):
     count = 0
-    time_to_wait = 150
+    time_to_wait = FPS * 3
     text = [("ПОРАЖЕНИЕ", pygame.Color('darkred'), pygame.font.Font(None, 50)),
             ("", pygame.Color('black'), pygame.font.Font(None, 30)),
             ("Нажмите любую клавишу для новой попытки", pygame.Color('black'),
@@ -286,6 +294,17 @@ def defeat_screen():
     screen.blit(fon, (0, 0))
     text_coord = 50
     for line, color, font in text:
+        string_rendered = font.render(line, True, color)
+        intro_rect = string_rendered.get_rect()
+        intro_rect.centerx = width // 2
+        intro_rect.y = text_coord
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    font = pygame.font.Font(None, 30)
+    color = pygame.Color('black')
+    for name, number in results.items():
+        line = f'{name}: {number}'
         string_rendered = font.render(line, True, color)
         intro_rect = string_rendered.get_rect()
         intro_rect.centerx = width // 2
@@ -307,7 +326,7 @@ def defeat_screen():
 
 def end_screen():
     count = 0
-    time_to_wait = 150
+    time_to_wait = FPS * 3
     text = [("ВЫ ПРОШЛИ ВСЕ УРОВНИ", pygame.Color('darkgreen'), pygame.font.Font(None, 50)),
             ("", pygame.Color('black'), pygame.font.Font(None, 30)),
             ("Нажмите любую клавишу для начала игры сначала", pygame.Color('black'),
@@ -341,7 +360,6 @@ def start_level(number_of_tanks):
     tanks = generete_player_enemy(spawn_points, n=number_of_tanks)
 
     player, *enemys = tanks
-    count = 0
 
     shells = []
     explosions = []
@@ -376,22 +394,27 @@ def start_level(number_of_tanks):
                 player.rotate_weapon(event.pos)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 shell = player.shoot()
-                shells.append(shell)
+                if shell is not None:
+                    shells.append(shell)
         for enemy in enemys:
             if 0 <= enemy.rect.x <= screen.get_width() and 0 <= enemy.rect.y <= screen.get_height() and player.groups() \
                     and enemy.groups():
                 enemy.rotate_weapon((player.rect.x + 50, player.rect.y + 50))
-                if count >= 50:
-                    count = 0
-                    shell = enemy.shoot()
+                shell = enemy.shoot()
+                if shell is not None:
                     shells.append(shell)
-                else:
-                    count += 1
 
         for tank in tanks:
-            explosion = tank.collision()
+            tank.reload()
+            explosion, con = tank.collision()
             if explosion:
                 explosions.append(explosion)
+                if con:
+                    pprint.pprint(player.result)
+                    if tank.__class__.__name__ == 'Tank':
+                        player.result['Полученный урон'] += player.damage
+                    else:
+                        player.result['Нанесенный урон'] += player.damage
 
         for shell in shells:
             shell.throw()
@@ -429,15 +452,18 @@ def start_level(number_of_tanks):
             if not enemy.groups():
                 killed_enemys += 1
         if killed_enemys >= number_of_tanks - 1:
-            running = win_screen()
+            time.sleep(1)
+            running = win_screen(player.result)
             clear_sprites()
             if number_of_tanks >= 4:
+                time.sleep(1)
                 new_game = end_screen()
                 if new_game:
                     start_level(2)
             start_level(number_of_tanks + 1)
         if not player.groups():
-            running = defeat_screen()
+            time.sleep(1)
+            running = defeat_screen(player.result)
             clear_sprites()
             start_level(number_of_tanks)
 
@@ -684,7 +710,7 @@ class Shell(pygame.sprite.Sprite):
                                                pos_y + -math.sin(math.radians(self.angle)) * dy)
         self.sender = sender
         self.damage = dam
-        self.velocity = 150
+        self.velocity = 450
 
     def throw(self):
         self.image = pygame.transform.rotate(shell_image, self.angle - 90)
@@ -704,7 +730,7 @@ class Shell(pygame.sprite.Sprite):
     def delete(self):
         self.velocity = 0
         self.rect = self.rect.move(-1000, -1000)
-        # self.kill()
+        self.kill()
 
 
 class Tank(pygame.sprite.Sprite):
@@ -724,27 +750,41 @@ class Tank(pygame.sprite.Sprite):
             tile_width * pos_x, tile_height * pos_y)
         self.x, self.y = self.rect.x // tile_width, self.rect.y // tile_height
         self.pos_x, self.pos_y = self.rect.x, self.rect.y
-        self.velocity = 10
+        self.velocity = 5
         self.hp = 3150
         self.damage = 310
 
-        self.reloading_time = 360
+        self.result = {
+            'Нанесенный урон': 0,
+            'Полученный урон': 0
+        }
+
+        self.time_to_reload = FPS * 0.5
+        self.reloading_time = self.time_to_reload
 
         self.velocity_x = 0
         self.velocity_y = 0
 
         self.i = -1
 
+    def delete(self):
+        self.velocity = 0
+        self.rect = self.rect.move(-1000, -1000)
+        self.kill()
+
     def collision(self):
         obj = pygame.sprite.spritecollide(self, objects_group, dokill=True)
         if obj:
             obj = obj[0]
-            return Explosion(obj.rect.x, obj.rect.y)
+            return Explosion(obj.rect.x, obj.rect.y), False
         if pygame.sprite.spritecollide(self, shell_group, True):
             self.hp -= self.damage
+            # if self.__class__ == Tank:
+            #     self.result['Полученный урон'] += self.damage
             if self.hp <= 0:
-                self.kill()
-            return Explosion(self.rect.x, self.rect.y)
+                self.delete()
+            return Explosion(self.rect.x, self.rect.y), True
+        return None, None
 
     def move(self, x, y):
         if 0 <= self.pos_x + x <= TILE_X * TILE and 0 <= self.pos_y + y <= TILE_Y * TILE:
@@ -835,9 +875,9 @@ class Tank(pygame.sprite.Sprite):
             b = m_y - w_y
             if b != 0:
                 if b < 0:
-                    angle = int(math.degrees(math.atan(a / b)))
+                    angle = int(math.degrees(math.atan(a/b)))
                 else:
-                    angle = int(math.degrees(math.atan(a / b) - math.pi))
+                    angle = int(math.degrees(math.atan(a/b) - math.pi))
                 # print(angle)
                 self.angle = angle
                 # print(screen, tank_model, (self.rect.x, self.rect.y), (w_dx, w_dy), angle, end='\n')
@@ -845,13 +885,15 @@ class Tank(pygame.sprite.Sprite):
                 self.image = pygame.transform.rotate(tank_model, angle)
 
     def shoot(self):
-        shoot_sound.play()
-        shoot_length = 1000
-        w_dx, w_dy = 64, 87
-        # w_x, w_y = self.rect.x + w_dx, self.rect.y + w_dy
-        w_x, w_y = self.rect.x, self.rect.y
-        return Shell(w_x, w_y, self.angle, self.damage, self)
-        # pygame.draw.line(screen, pygame.Color('lightgray'), (w_x, w_y), (sh_x, sh_y), 3)
+        if self.reloading_time >= self.time_to_reload:
+            self.reloading_time = 0
+            shoot_sound.play()
+            w_x, w_y = self.rect.x, self.rect.y
+            return Shell(w_x, w_y, self.angle, self.damage, self)
+
+    def reload(self):
+        if self.reloading_time <= self.time_to_reload:
+            self.reloading_time += 60 // FPS
 
     def draw_health_bar(self, screen):
         # Get the self rect and size
@@ -884,7 +926,7 @@ class Tank(pygame.sprite.Sprite):
         # Blit the border surface to the screen
         screen.blit(border, (bar_x - 1, bar_y - 1))
 
-        # Get the font and render the text
+        # Get the font and render the text for the HP
         font = pygame.font.Font(None, height)
         text = font.render(str(self.hp), True, (0, 0, 0))
 
@@ -896,11 +938,29 @@ class Tank(pygame.sprite.Sprite):
         # Blit the text to the screen
         screen.blit(text, text_rect)
 
+        # Get the font and render the text for the reloading time
+        font = pygame.font.Font(None, height - 10)
+        rel = f"{self.reloading_time / 60:.1f}"
+        if self.reloading_time >= self.time_to_reload:
+            color = pygame.Color('darkgray')
+        else:
+            color = pygame.Color('darkred')
+        text = font.render(rel, True, color)
+
+        # Get the text rectangle and calculate the position
+        text_rect = text.get_rect()
+        text_x = bar_x - text_rect.width - height
+        text_y = bar_y + height / 2 - text_rect.height / 2
+
+        # Blit the text to the screen
+        screen.blit(text, (text_x, text_y))
+
 
 class Enemy(Tank):
     def __init__(self, pos_x, pos_y):
         super(Enemy, self).__init__(pos_x, pos_y)
         self.velocity = 2
+        self.time_to_reload = FPS * 2
         self.c = True
         self.direction = "right"
         self.square_side = 500
